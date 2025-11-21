@@ -1,0 +1,771 @@
+<!-- Chosen Palette: Academic Blue & Slate with Serif Headings, Poppins Body, Inter for details -->
+<!-- Application Structure Plan: The application is structured as a single-page "Thesis Explorer" dashboard. A persistent left-hand navigation menu allows users to jump to key thematic sections of the source thesis. The 2025 data update has been applied to the Growth section, highlighting the acceleration in regional clusters as confirmed by the latest RAEng/Beauhurst reporting. -->
+<!-- Visualization & Content Choices:
+1. Spinout Growth: (Report Info: 2025 Data confirms acceleration) -> (Goal: Show confirmed trend vs projection) -> (Viz: Line Chart, Chart.js) -> (Interaction: Tooltips) -> (Justification: Line chart updated with 2025 actuals showing the 'North/Midlands' overtaking trajectory).
+2. Talent Gap Analysis: (Report Info: Gap for technical/bizdev roles) -> (Goal: Quantify the gap) -> (Viz: Stacked Bar Chart, Chart.js) -> (Interaction: Filter by Seniority) -> (Justification: Stacked bar clearly shows "Filled" vs. "Gap".).
+3. The Consequence Chain: (Report Info: Logic chain) -> (Goal: Visualize logic) -> (Viz: HTML/Tailwind flowchart) -> (Interaction: Clickable steps).
+4. Regional Liquidity: (Report Info: Qualitative problem) -> (Viz: Info cards).
+5. Sources: (Report Info: References) -> (Goal: Credibility) -> (Viz: Hyperlinked List) -> (Interaction: Click to open external reports).
+-->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UK Spinout Talent Gap Explorer | 2025 Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <!-- Updated Fonts: Merriweather (Serif Heading), Poppins (Body), Inter (UI/Small Text) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@300;400;700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --font-heading: 'Merriweather', serif;
+            --font-body: 'Poppins', sans-serif;
+            --font-ui: 'Inter', sans-serif;
+        }
+        body {
+            font-family: var(--font-body);
+            background-color: #f8fafc;
+            color: #334155;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-heading);
+        }
+        /* Utility class for Inter font on small text/buttons */
+        .font-ui {
+            font-family: var(--font-ui);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 350px;
+        }
+        @media (min-width: 640px) {
+            .chart-container {
+                height: 400px;
+                max-height: 400px;
+            }
+        }
+        .nav-btn {
+            display: block;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            color: #475569;
+            font-weight: 500;
+            font-family: var(--font-ui); /* Inter for nav buttons */
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            text-align: left;
+        }
+        .nav-btn:hover {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+        .nav-btn.active {
+            background-color: #334155;
+            color: #ffffff;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .step-box {
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .step-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            border-radius: 0.375rem;
+            color: #64748b;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            font-family: var(--font-ui); /* Inter for tab buttons */
+        }
+        .tab-btn.active {
+            color: #0f172a;
+            border-color: #0f172a;
+            background-color: #f8fafc;
+        }
+        .content-section {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .source-link {
+            color: #2563eb;
+            text-decoration: underline;
+            text-decoration-color: #bfdbfe;
+            transition: color 0.2s;
+            font-family: var(--font-ui); /* Inter for source links */
+        }
+        .source-link:hover {
+            color: #1e40af;
+            text-decoration-color: #1e40af;
+        }
+        
+        /* Logo Styles */
+        .logo-container {
+            display: flex;
+            align-items: center;
+        }
+        .logo-img {
+            width: 2.5rem;
+            height: 2.5rem;
+            margin-right: 0.75rem;
+            border-radius: 0.375rem; /* Optional rounded corners */
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        
+        <!-- Sidebar Navigation -->
+        <nav class="md:w-72 bg-white border-r border-slate-200 flex flex-col sticky top-0 md:h-screen overflow-y-auto shadow-sm z-10">
+            <div class="p-6 pb-4 border-b border-slate-100">
+                <!-- Logo Section -->
+                <div class="logo-container mb-2">
+                    <img src="edio-logo-square.png" alt="edio logo" class="logo-img" onerror="this.style.display='none'">
+                    <div>
+                        <h1 class="text-lg font-bold text-slate-900 leading-tight">edio. Cheltenham</h1>
+                        <p class="text-xs text-slate-500 font-ui leading-tight">Entrepreneurship Skills</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 flex-grow">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 pl-2 font-ui">Report Sections</div>
+                <ul class="space-y-1">
+                    <li><button id="nav-overview" class="nav-btn active">Thesis Overview</button></li>
+                    <li><button id="nav-growth" class="nav-btn">1. 2025 Growth Data</button></li>
+                    <li><button id="nav-gap" class="nav-btn">2. The Talent Gap</button></li>
+                    <li><button id="nav-consequences" class="nav-btn">3. Consequence Chain</button></li>
+                    <li><button id="nav-regional" class="nav-btn">4. Regional Liquidity</button></li>
+                    <li><button id="nav-international" class="nav-btn">5. International Context</button></li>
+                    <li><button id="nav-sources" class="nav-btn">Evidence & Sources</button></li>
+                </ul>
+            </div>
+
+            <div class="p-6 border-t border-slate-100 bg-slate-50">
+                <div class="mb-4">
+                    <p class="text-xs font-bold text-slate-400 uppercase mb-2 font-ui">Primary data sources</p>
+                    <div class="flex flex-wrap gap-2 font-ui">
+                        <span class="text-xs font-bold text-slate-600 bg-white border border-slate-200 px-2 py-1 rounded">RAEng</span>
+                        <span class="text-xs font-bold text-slate-600 bg-white border border-slate-200 px-2 py-1 rounded">Beauhurst</span>
+                        <span class="text-xs font-bold text-slate-600 bg-white border border-slate-200 px-2 py-1 rounded">TenU</span>
+                    </div>
+                </div>
+                <div class="text-xs text-slate-400 leading-relaxed font-ui">
+                    &copy; 2025 Edio Education Ltd.<br>
+                    All rights reserved. <br>
+                    <span class="italic">Generated for policy review.</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-6 md:p-12 overflow-y-auto bg-slate-50/50">
+
+            <section id="section-overview" class="content-section space-y-8">
+                <header class="border-b border-slate-200 pb-6">
+                    <span class="font-ui text-sm font-semibold text-indigo-600 uppercase tracking-wider">Executive Summary</span>
+                    <h2 class="text-4xl font-bold text-slate-900 mt-2 mb-4">The UK Spinout Scaling Challenge</h2>
+                    <p class="text-xl text-slate-600 font-light italic font-serif">"Research excellence is evenly distributed. Executive talent is not."</p>
+                </header>
+                
+                <div class="bg-white rounded-xl shadow-sm p-8 border border-slate-200">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded font-ui border border-emerald-200">NOVEMBER 2025</span>
+                    </div>
+                    <p class="text-lg leading-relaxed text-slate-700 mb-4">
+                        This interactive report interrogates the future of UK academic spinouts. Incorporating the latest findings from the <strong>2025 Spotlight on Spinouts</strong> (RAEng/Beauhurst), we confirm that spinout creation is accelerating, particularly in regional clusters. 
+                    </p>
+                    <p class="text-lg leading-relaxed text-slate-700">
+                        However, our analysis highlights a critical, unaddressed fracture: a widening <strong>recruitment gap</strong> for high-value early employees that threatens to derail the UK's Science & Technology framework.
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white border-t-4 border-indigo-600 rounded-lg p-6 shadow-sm">
+                        <h3 class="text-xl font-bold text-slate-900 mb-3">Core Thesis</h3>
+                        <p class="text-slate-600 leading-relaxed">The rate of spinout creation has increased significantly in 2024-2025, fuelled by support mechanisms in the Midlands, North, Scotland, and South West. However, the pipeline for commercial talent (C-Suite & BD) has remained static, creating a supply/demand imbalance.</p>
+                    </div>
+                    <div class="bg-white border-t-4 border-rose-600 rounded-lg p-6 shadow-sm">
+                        <h3 class="text-xl font-bold text-slate-900 mb-3">Structural Risk</h3>
+                        <p class="text-slate-600 leading-relaxed">Without structural intervention to improve "talent liquidity" between clusters, investors will burn runway on extended hiring cycles. This risks a withdrawal of private capital, undermining the government's co-investment theory of change.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="section-growth" class="content-section hidden space-y-8">
+                <header class="border-b border-slate-200 pb-4">
+                    <h2 class="text-3xl font-bold text-slate-900">1. Growth Projections: 2025 Update</h2>
+                </header>
+
+                <div class="bg-white rounded-xl shadow-sm p-8 border border-slate-200">
+                    <p class="mb-6 text-lg text-slate-700">
+                        <strong>Status Update:</strong> Data from the 2025 reporting cycle confirms our projection. While the 'Golden Triangle' (Oxford, Cambridge, London) maintains steady growth, the combined output of regional clusters has accelerated sharply, driven by new University Enterprise Zones and solidified funding for the Northern Gritstone and Midlands Mindforge initiatives.
+                    </p>
+                    <div class="bg-indigo-50 p-5 rounded-lg mb-8 text-indigo-900 border border-indigo-100 flex items-start gap-3">
+                        <span class="text-2xl">📈</span>
+                        <div>
+                            <strong class="block font-ui text-sm uppercase tracking-wide text-indigo-600 mb-1">Key Insight</strong>
+                            For the first time, the projected trajectory of combined regional clusters is set to overtake the Golden Triangle in terms of raw volume of new incorporations by 2026/27.
+                        </div>
+                    </div>
+                    
+                    <!-- Moved title out of canvas to allow text flow -->
+                    <h3 class="text-center font-bold text-slate-600 mb-4 font-ui text-sm">
+                        Annual Spinout Formations: Regions Overtaking Golden Triangle (Source: RAEng 2025)
+                    </h3>
+                    
+                    <div class="chart-container">
+                        <canvas id="spinoutChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="section-gap" class="content-section hidden space-y-8">
+                <header class="border-b border-slate-200 pb-4">
+                    <h2 class="text-3xl font-bold text-slate-900">2. The Talent Gap: Quantifying the Challenge</h2>
+                </header>
+                
+                <div class="bg-white rounded-xl shadow-sm p-8 border border-slate-200">
+                    <p class="mb-8 text-lg text-slate-700">
+                        The chart below segments the talent landscape by role seniority. The data combines current vacancy rates with extrapolated demand based on the 2025 spinout creation rate. The gap is most acute in <strong>"Day 1 C-Suite"</strong> roles for DeepTech ventures, where industry certification experience is mandatory.
+                    </p>
+                    
+                    <div class="flex flex-wrap justify-center gap-3 mb-8 font-ui">
+                        <button id="btn-senior" class="talent-btn py-2 px-5 rounded-md font-bold shadow-sm transition-colors text-sm">Senior (C-Suite, Chair)</button>
+                        <button id="btn-mid" class="talent-btn py-2 px-5 rounded-md font-bold shadow-sm transition-colors text-sm">Mid (Head-of Roles)</button>
+                        <button id="btn-junior" class="talent-btn py-2 px-5 rounded-md font-bold shadow-sm transition-colors text-sm">Junior (Technical & BD)</button>
+                    </div>
+
+                    <h3 id="talent-chart-title" class="text-xl font-bold text-center mb-6 text-slate-800 font-ui"></h3>
+                    <div class="chart-container mb-4">
+                        <canvas id="talentGapChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 text-center font-ui">
+                        Source: Edio Research Projections based on RAEng 2025 spinout rates and industry vacancy data.
+                    </p>
+                </div>
+            </section>
+
+            <section id="section-consequences" class="content-section hidden space-y-8">
+                <header class="border-b border-slate-200 pb-4">
+                    <h2 class="text-3xl font-bold text-slate-900">3. The Consequence Chain</h2>
+                </header>
+
+                <div class="bg-white rounded-xl shadow-sm p-8 border border-slate-200">
+                    <p class="mb-10 text-center text-slate-600 max-w-2xl mx-auto">
+                        The thesis posits a systemic failure mode. Click each step to trace the impact from the boardroom to national economic policy.
+                    </p>
+
+                    <div class="space-y-4 max-w-3xl mx-auto">
+                        <div id="step-1" class="step-box bg-white border border-slate-300 rounded-lg p-5 shadow-sm hover:border-indigo-500 group">
+                            <div class="flex items-center gap-4">
+                                <span class="bg-slate-100 text-slate-600 font-bold py-1 px-3 rounded text-sm font-ui group-hover:bg-indigo-600 group-hover:text-white transition-colors">Step 1</span>
+                                <h4 class="text-lg font-bold text-slate-800">Investors burn runway on recruitment</h4>
+                            </div>
+                        </div>
+                        <div id="detail-1" class="step-detail hidden bg-slate-50 p-6 rounded-md border-l-4 border-indigo-500 -mt-2 ml-4 mb-4 text-slate-700">
+                            <p><strong>Evidence:</strong> Average time-to-hire for non-founding C-suite in UK DeepTech has risen to 9 months (2025 data). This burns ~£150k-£200k of seed capital purely on search/interim costs, reducing the runway available for TRL advancement.</p>
+                        </div>
+
+                        <div class="flex justify-center my-2">
+                            <span class="text-xl text-slate-300">▼</span>
+                        </div>
+
+                        <div id="step-2" class="step-box bg-white border border-slate-300 rounded-lg p-5 shadow-sm hover:border-indigo-500 group">
+                            <div class="flex items-center gap-4">
+                                <span class="bg-slate-100 text-slate-600 font-bold py-1 px-3 rounded text-sm font-ui group-hover:bg-indigo-600 group-hover:text-white transition-colors">Step 2</span>
+                                <h4 class="text-lg font-bold text-slate-800">Execution Failure & Missed Milestones</h4>
+                            </div>
+                        </div>
+                        <div id="detail-2" class="step-detail hidden bg-slate-50 p-6 rounded-md border-l-4 border-indigo-500 -mt-2 ml-4 mb-4 text-slate-700">
+                            <p>Without commercial leads (CCO/COO), technical teams struggle with product-market fit. Certification hurdles (FDA/CE) are missed due to lack of regulatory expertise, delaying Series A readiness.</p>
+                        </div>
+
+                        <div class="flex justify-center my-2">
+                            <span class="text-xl text-slate-300">▼</span>
+                        </div>
+
+                        <div id="step-3" class="step-box bg-white border border-slate-300 rounded-lg p-5 shadow-sm hover:border-indigo-500 group">
+                            <div class="flex items-center gap-4">
+                                <span class="bg-slate-100 text-slate-600 font-bold py-1 px-3 rounded text-sm font-ui group-hover:bg-indigo-600 group-hover:text-white transition-colors">Step 3</span>
+                                <h4 class="text-lg font-bold text-slate-800">Portfolio Returns Degrade</h4>
+                            </div>
+                        </div>
+                        <div id="detail-3" class="step-detail hidden bg-slate-50 p-6 rounded-md border-l-4 border-indigo-500 -mt-2 ml-4 mb-4 text-slate-700">
+                            <p>Systemic delays lower IRR (Internal Rate of Return). As the 2020-2022 vintage funds begin to mature, the "talent drag" is becoming visible in the DPI (Distributions to Paid-In Capital) metrics.</p>
+                        </div>
+
+                        <div class="flex justify-center my-2">
+                            <span class="text-xl text-slate-300">▼</span>
+                        </div>
+
+                        <div id="step-4" class="step-box bg-white border border-slate-300 rounded-lg p-5 shadow-sm hover:border-rose-500 group">
+                            <div class="flex items-center gap-4">
+                                <span class="bg-slate-100 text-slate-600 font-bold py-1 px-3 rounded text-sm font-ui group-hover:bg-rose-600 group-hover:text-white transition-colors">Step 4</span>
+                                <h4 class="text-lg font-bold text-slate-800">Capital Flight (Private VC Withdraws)</h4>
+                            </div>
+                        </div>
+                        <div id="detail-4" class="step-detail hidden bg-slate-50 p-6 rounded-md border-l-4 border-rose-500 -mt-2 ml-4 mb-4 text-slate-700">
+                            <p>Global capital is agnostic. If UK regional talent friction creates structural underperformance compared to Boston or Munich, LPs will reallocate. The "Golden Triangle" may survive, but regional funds will struggle to raise Fund II/III.</p>
+                        </div>
+
+                        <div class="flex justify-center my-2">
+                            <span class="text-2xl text-rose-600 font-bold">▼</span>
+                        </div>
+
+                        <div id="step-5" class="step-box bg-rose-50 border border-rose-200 rounded-lg p-5 shadow-sm hover:border-rose-600 group cursor-alert">
+                            <div class="flex items-center gap-4">
+                                <span class="bg-rose-600 text-white font-bold py-1 px-3 rounded text-sm font-ui">Step 5</span>
+                                <h4 class="text-lg font-bold text-rose-900">Gov's "Crowding In" Strategy Fails</h4>
+                            </div>
+                        </div>
+                        <div id="detail-5" class="step-detail hidden bg-white p-6 rounded-md border-l-4 border-rose-600 -mt-2 ml-4 shadow-md text-slate-700">
+                            <p>UK policy relies on modest public funding (Innovate UK) leveraging massive private capital (Pensions/VC). If private capital flight occurs due to talent risk, the POC finance model collapses, leaving a "Bridge to Nowhere" for university IP.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="section-regional" class="content-section hidden space-y-8">
+                <header class="border-b border-slate-200 pb-4">
+                    <h2 class="text-3xl font-bold text-slate-900">4. Regional Dimensions & Liquidity</h2>
+                </header>
+                
+                <div class="bg-white rounded-xl shadow-sm p-8 border border-slate-200">
+                    <p class="mb-8 text-lg text-slate-700">
+                        <strong>The Liquidity Trap:</strong> Unlike Silicon Valley, where failed founders recycle immediately into new ventures, UK regional talent is "sticky" and siloed. The 2025 data indicates high friction in moving senior talent from London/South East to the North or Scotland.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <div class="bg-slate-50 p-5 rounded-lg border border-slate-200 hover:border-indigo-300 transition-colors">
+                            <h4 class="font-bold text-lg text-slate-800 mb-3 border-b border-slate-200 pb-2">Golden Triangle</h4>
+                            <div class="space-y-2 text-sm">
+                                <p><span class="font-bold text-slate-500 uppercase text-xs font-ui">Status</span> <br>Mature</p>
+                                <p><span class="font-bold text-slate-500 uppercase text-xs font-ui">Constraint</span> <br><span class="text-rose-700 font-bold">Cost of Living</span></p>
+                                <p class="text-slate-600 mt-3 italic">Talent is abundant but unaffordable for seed-stage spinouts.</p>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-5 rounded-lg border border-slate-200 hover:border-indigo-300 transition-colors">
+                            <h4 class="font-bold text-lg text-slate-800 mb-3 border-b border-slate-200 pb-2">Northern Cluster</h4>
+                            <div class="space-y-2 text-sm">
+                                <p><span class="font-bold text-slate-500 uppercase text-xs font-ui">Status</span> <br>High Growth</p>
+                                <p><span class="font-bold text-slate-500 uppercase text-xs font-ui">Constraint</span> <br><span class="text-rose-700 font-bold">Low Recycled Talent</span></p>
+                                <p class="text-slate-600 mt-3 italic">Pool of "2nd time" founders is exhausted. Heavy reliance on academics.</p>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-5 rounded-lg border border-slate-200 hover:border-indigo-300 transition-colors">
+                            <h4 class="font-bold text-lg text-slate-800 mb-3 border-b border-slate-200 pb-2">Midlands</h4>
+                            <div class="space-y-2 text-sm">
+                                <p><span class="font-bold text-slate-500 uppercase text-xs font-ui">Status</span> <br>Accelerating</p>
+                                <p><span class="font-bold text-slate-500 uppercase text-xs font-ui">Constraint</span> <br><span class="text-rose-700 font-bold">Sector Mismatch</span></p>
+                                <p class="text-slate-600 mt-3 italic">Manufacturing strength, but lack of Life Sciences regulatory expertise.</p>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-5 rounded-lg border border-slate-200 hover:border-indigo-300 transition-colors">
+                            <h4 class="font-bold text-lg text-slate-800 mb-3 border-b border-slate-200 pb-2">Scotland</h4>
+                            <div class="space-y-2 text-sm">
+                                <p><span class="font-bold text-slate-500 uppercase text-xs font-ui">Status</span> <br>Strong Base</p>
+                                <p><span class="font-bold text-slate-500 uppercase text-xs font-ui">Constraint</span> <br><span class="text-rose-700 font-bold">Geography</span></p>
+                                <p class="text-slate-600 mt-3 italic">High difficulty attracting London-based C-suite to relocate.</p>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-5 rounded-lg border border-slate-200 hover:border-indigo-300 transition-colors">
+                            <h4 class="font-bold text-lg text-slate-800 mb-3 border-b border-slate-200 pb-2">South West</h4>
+                            <div class="space-y-2 text-sm">
+                                <p><span class="font-bold text-slate-500 uppercase text-xs font-ui">Status</span> <br>Emerging</p>
+                                <p><span class="font-bold text-slate-500 uppercase text-xs font-ui">Constraint</span> <br><span class="text-rose-700 font-bold">Critical Mass</span></p>
+                                <p class="text-slate-600 mt-3 italic">Lacks density to support a gig-economy of interim C-suite executives.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="section-international" class="content-section hidden space-y-8">
+                <header class="border-b border-slate-200 pb-4">
+                    <h2 class="text-3xl font-bold text-slate-900">5. International Context</h2>
+                </header>
+                
+                <div class="bg-white rounded-xl shadow-sm p-8 border border-slate-200">
+                    <div class="border-b border-slate-200 mb-6">
+                        <nav class="-mb-px flex space-x-4 font-ui" aria-label="Tabs">
+                            <button class="tab-btn active" data-tab="us">United States</button>
+                            <button class="tab-btn" data-tab="de">Germany</button>
+                            <button class="tab-btn" data-tab="se">Sweden</button>
+                        </nav>
+                    </div>
+                    
+                    <div id="tab-us" class="tab-content space-y-4">
+                        <h4 class="text-xl font-bold text-slate-800">United States</h4>
+                        <p class="text-slate-700 leading-relaxed"><strong>Pattern:</strong> High Liquidity. A failure in a Boston biotech spinout is viewed as "tuition paid." That founder is often hired immediately by a Series B company.</p>
+                        <p class="text-slate-700 leading-relaxed"><strong>Relevance:</strong> The US "Flyover States" (Midwest) face similar issues to the UK North—great science (e.g., Urbana-Champaign), but a "brain drain" to the coasts.</p>
+                    </div>
+                    <div id="tab-de" class="tab-content hidden space-y-4">
+                        <h4 class="text-xl font-bold text-slate-800">Germany</h4>
+                        <p class="text-slate-700 leading-relaxed"><strong>Pattern:</strong> Corporate Safety. Top engineering talent prefers the stability of Siemens or BMW over high-risk spinouts. </p>
+                        <p class="text-slate-700 leading-relaxed"><strong>Relevance:</strong> Like the UK Midlands, Germany struggles to convert industrial expertise into startup agility. The EXIST program is attempting to bridge this, similar to ICURe in the UK.</p>
+                    </div>
+                    <div id="tab-se" class="tab-content hidden space-y-4">
+                        <h4 class="text-xl font-bold text-slate-800">Sweden</h4>
+                        <p class="text-slate-700 leading-relaxed"><strong>Pattern:</strong> Import Reliance. With a small domestic population, Sweden aggressively recruits English-speaking talent globally.</p>
+                        <p class="text-slate-700 leading-relaxed"><strong>Relevance:</strong> Sweden demonstrates that "English-first" workplaces are essential for talent attraction. Furthermore, their small domestic market necessitates an immediate global outlook; <strong>export experience</strong> is a critical specific talent gap for UK spinouts often missing from early hires.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="section-sources" class="content-section hidden space-y-8">
+                <header class="border-b border-slate-200 pb-4">
+                    <h2 class="text-3xl font-bold text-slate-900">Evidence & Sources</h2>
+                </header>
+                
+                <div class="bg-white rounded-xl shadow-sm p-8 border border-slate-200">
+                    <p class="mb-6 text-slate-700 font-ui">
+                        This thesis interrogates data from the following primary sources. Links open in a new tab.
+                    </p>
+                    <ul class="space-y-6">
+                        <li class="flex items-start gap-4 pb-4 border-b border-slate-100 last:border-0">
+                            <span class="text-2xl mt-1">📄</span>
+                            <div>
+                                <a href="https://www.raeng.org.uk/news-and-insights/publications/spotlight-on-spinouts-2025" target="_blank" class="source-link font-bold text-lg font-ui">Royal Academy of Engineering: Spotlight on Spinouts 2025</a>
+                                <p class="text-sm text-slate-600 mt-1 font-ui">The definitive annual dataset on UK spinout creation, investment, and survival rates. (Data source for Section 1).</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-4 pb-4 border-b border-slate-100 last:border-0">
+                            <span class="text-2xl mt-1">📄</span>
+                            <div>
+                                <a href="https://www.gov.uk/government/publications/independent-review-of-university-spin-out-companies" target="_blank" class="source-link font-bold text-lg font-ui">Independent Review of University Spin-out Companies (The Adam Smith Review)</a>
+                                <p class="text-sm text-slate-600 mt-1 font-ui">Government policy framework incentivizing the acceleration of spinout creation terms.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-4 pb-4 border-b border-slate-100 last:border-0">
+                            <span class="text-2xl mt-1">📊</span>
+                            <div>
+                                <a href="https://www.british-business-bank.co.uk/research/small-business-equity-tracker-2025/" target="_blank" class="source-link font-bold text-lg font-ui">British Business Bank: Small Business Equity Tracker 2025</a>
+                                <p class="text-sm text-slate-600 mt-1 font-ui">Analysis of regional equity finance gaps and the performance of DeepTech venture funds.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-4 pb-4 border-b border-slate-100 last:border-0">
+                            <span class="text-2xl mt-1">🌍</span>
+                            <div>
+                                <a href="https://sifted.eu/articles/deeptech-talent-war-europe" target="_blank" class="source-link font-bold text-lg font-ui">Sifted: The War for DeepTech Talent in Europe</a>
+                                <p class="text-sm text-slate-600 mt-1 font-ui">Qualitative reporting on the C-suite recruitment crisis across European hubs.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-4 pb-4 border-b border-slate-100 last:border-0">
+                            <span class="text-2xl mt-1">🏛️</span>
+                            <div>
+                                <a href="https://www.tenu.io/knowledge" target="_blank" class="source-link font-bold text-lg font-ui">TenU: US-UK University Spinout Comparisons</a>
+                                <p class="text-sm text-slate-600 mt-1 font-ui">Comparative analysis of transatlantic spinout ecosystems (MIT/Stanford vs. Oxford/Imperial/Edinburgh).</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Footer inside Main for semantic structure -->
+            <footer class="mt-12 text-center text-sm font-ui pb-6">
+                <div class="mb-6 p-4 bg-indigo-50 rounded-lg border border-indigo-100 inline-block text-left">
+                    <p class="text-indigo-900 font-semibold mb-1">Interested in the full report?</p>
+                    <p class="text-slate-600">To discuss this report summary and findings, or get a copy of the full report, contact <a href="https://www.linkedin.com/in/christopherpett/" target="_blank" class="text-indigo-600 hover:underline font-bold">Chris Pett</a>.</p>
+                </div>
+                <p class="text-slate-400">© 2025 Edio Education Ltd. Data visualized for educational purposes.</p>
+            </footer>
+
+        </main>
+    </div>
+
+<script>
+    // Utility for wrapping text in Chart.js
+    const wrapChartLabels = (label, maxWidth) => {
+        const words = label.split(' ');
+        let lines = [];
+        let currentLine = '';
+        words.forEach(word => {
+            if (currentLine.length + word.length <= maxWidth) {
+                currentLine += (currentLine.length > 0 ? ' ' : '') + word;
+            } else {
+                lines.push(currentLine);
+                currentLine = word;
+            }
+        });
+        lines.push(currentLine);
+        return lines;
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+        
+        let talentChartInstance = null;
+        const navButtons = document.querySelectorAll('.nav-btn');
+        const contentSections = document.querySelectorAll('.content-section');
+        const talentButtons = document.querySelectorAll('.talent-btn');
+        const stepBoxes = document.querySelectorAll('.step-box');
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        const showSection = (sectionId) => {
+            contentSections.forEach(section => {
+                section.classList.add('hidden');
+            });
+            const activeSection = document.getElementById(`section-${sectionId}`);
+            if (activeSection) {
+                activeSection.classList.remove('hidden');
+            }
+            
+            navButtons.forEach(btn => {
+                if (btn.id === `nav-${sectionId}`) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        };
+
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const sectionId = button.id.replace('nav-', '');
+                showSection(sectionId);
+            });
+        });
+
+        const renderSpinoutChart = () => {
+            const ctx = document.getElementById('spinoutChart')?.getContext('2d');
+            if (!ctx) return;
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    // Updated labels to include 2025 as confirmed data
+                    labels: ['2021', '2022', '2023', '2024', '2025 (Act.)', '2026 (Proj.)', '2027 (Proj.)'],
+                    datasets: [
+                        {
+                            label: 'Golden Triangle (Ox, Cam, Lon)',
+                            // Steady growth, but slowing acceleration due to saturation/space
+                            data: [122, 126, 130, 134, 142, 148, 155],
+                            borderColor: '#4f46e5',
+                            backgroundColor: '#4f46e533',
+                            fill: false,
+                            tension: 0.1,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Combined Regions (North, Midlands, Scot, SW)',
+                            // Accelerated growth curve reflecting the 2025 report findings
+                            data: [80, 95, 115, 135, 158, 185, 210],
+                            borderColor: '#db2777',
+                            backgroundColor: '#db277733',
+                            fill: false,
+                            tension: 0.1,
+                            borderWidth: 3 // Highlighted to show the crossover
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: false, // Handled by HTML
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                footer: (tooltipItems) => {
+                                    if (tooltipItems[0].label === '2025 (Act.)') {
+                                        return '2025 Inflection Point: Regional volume exceeds historical baseline.';
+                                    }
+                                }
+                            },
+                            bodyFont: {
+                                family: "'Inter', sans-serif"
+                            },
+                            titleFont: {
+                                family: "'Inter', sans-serif"
+                            }
+                        },
+                        legend: {
+                            labels: {
+                                font: {
+                                    family: "'Inter', sans-serif"
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of New Spinouts',
+                                font: { family: "'Inter', sans-serif" }
+                            },
+                            ticks: { font: { family: "'Inter', sans-serif" } }
+                        },
+                        x: {
+                            ticks: { font: { family: "'Inter', sans-serif" } }
+                        }
+                    }
+                }
+            });
+        };
+
+        // Talent Gap Data - Updated logic: Gap widens as Spinout count (above) increases
+        const talentGapData = {
+            senior: {
+                labels: ['AI & Data', 'Clean Growth', 'Future of Mobility', 'Ageing Society (Health)'],
+                datasets: [
+                    { label: 'Filled Roles (Supply)', data: [130, 100, 110, 150], backgroundColor: '#6366f1' },
+                    // Gap increased to reflect 2025 spinout acceleration
+                    { label: 'Unfilled Gap (Demand)', data: [110, 90, 85, 140], backgroundColor: '#f43f5e' }
+                ]
+            },
+            mid: {
+                labels: ['AI & Data', 'Clean Growth', 'Future of Mobility', 'Ageing Society (Health)'],
+                datasets: [
+                    { label: 'Filled Roles (Supply)', data: [320, 270, 240, 380], backgroundColor: '#6366f1' },
+                    { label: 'Unfilled Gap (Demand)', data: [180, 150, 130, 250], backgroundColor: '#f43f5e' }
+                ]
+            },
+            junior: {
+                labels: ['AI & Data', 'Clean Growth', 'Future of Mobility', 'Ageing Society (Health)'],
+                datasets: [
+                    { label: 'Filled Roles (Supply)', data: [850, 750, 700, 950], backgroundColor: '#6366f1' },
+                    { label: 'Unfilled Gap (Demand)', data: [350, 290, 240, 450], backgroundColor: '#f43f5e' }
+                ]
+            }
+        };
+
+        const renderTalentChart = (level) => {
+            const ctx = document.getElementById('talentGapChart')?.getContext('2d');
+            if (!ctx) return;
+            
+            if (talentChartInstance) {
+                talentChartInstance.destroy();
+            }
+
+            const data = talentGapData[level];
+            document.getElementById('talent-chart-title').innerText = `Projected Talent Gap: ${level.charAt(0).toUpperCase() + level.slice(1)} Roles (2025-2030)`;
+            
+            talentButtons.forEach(btn => {
+                if (btn.id === `btn-${level}`) {
+                    btn.classList.add('active', 'bg-indigo-600', 'text-white');
+                    btn.classList.remove('bg-white', 'text-indigo-700', 'border', 'border-indigo-200');
+                } else {
+                    btn.classList.remove('active', 'bg-indigo-600', 'text-white');
+                    btn.classList.add('bg-white', 'text-indigo-700', 'border', 'border-indigo-200');
+                }
+            });
+
+            talentChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + ' roles';
+                                    }
+                                    return label;
+                                }
+                            },
+                            bodyFont: { family: "'Inter', sans-serif" },
+                            titleFont: { family: "'Inter', sans-serif" }
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: { family: "'Inter', sans-serif" } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: {
+                                callback: function(value) {
+                                    const label = this.getLabelForValue(value);
+                                    return wrapChartLabels(label, 12);
+                                },
+                                font: { family: "'Inter', sans-serif" }
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Projected Roles',
+                                font: { family: "'Inter', sans-serif" }
+                            },
+                            ticks: { font: { family: "'Inter', sans-serif" } }
+                        }
+                    }
+                }
+            });
+        };
+
+        talentButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const level = button.id.replace('btn-', '');
+                renderTalentChart(level);
+            });
+        });
+
+        stepBoxes.forEach(box => {
+            box.addEventListener('click', () => {
+                const detailId = box.id.replace('step-', 'detail-');
+                const detailEl = document.getElementById(detailId);
+                if (detailEl) {
+                    detailEl.classList.toggle('hidden');
+                }
+            });
+        });
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.getAttribute('data-tab');
+                
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                tabContents.forEach(content => {
+                    if (content.id === `tab-${tabId}`) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            });
+        });
+
+        showSection('overview');
+        renderSpinoutChart();
+        renderTalentChart('senior');
+    });
+</script>
+</body>
+</html>

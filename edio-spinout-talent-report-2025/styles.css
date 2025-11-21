@@ -1,0 +1,149 @@
+/* UK Spinout Talent Gap Explorer - Custom Styles 
+   Note: This file is designed to work alongside Tailwind CSS utility classes.
+*/
+
+/* --- Typography Settings --- */
+:root {
+    /* Headings: Authoritative Serif */
+    --font-heading: 'Merriweather', serif;
+    /* Body: Clean Geometric Sans */
+    --font-body: 'Poppins', sans-serif;
+    /* UI Elements (Buttons, Legends, Metadata): Highly Legible Sans */
+    --font-ui: 'Inter', sans-serif;
+}
+
+body {
+    font-family: var(--font-body);
+    background-color: #f8fafc; /* Matches Tailwind slate-50 */
+    color: #334155; /* Matches Tailwind slate-700 */
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+}
+
+/* Utility class for applying Inter font to specific elements */
+.font-ui {
+    font-family: var(--font-ui);
+}
+
+/* --- Component: Charts --- */
+/* Critical for Chart.js responsiveness within flex/grid layouts */
+.chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 320px;
+    max-height: 350px;
+}
+
+@media (min-width: 640px) {
+    .chart-container {
+        height: 400px;
+        max-height: 400px;
+    }
+}
+
+/* --- Component: Navigation Buttons (Sidebar) --- */
+.nav-btn {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    color: #475569;
+    font-weight: 500;
+    font-family: var(--font-ui);
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    text-align: left;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.nav-btn:hover {
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+.nav-btn.active {
+    background-color: #334155;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Component: Interactive Step Boxes (Consequence Chain) --- */
+.step-box {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.step-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* --- Component: Tabs (International Context) --- */
+.tab-btn {
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    border-radius: 0.375rem;
+    color: #64748b;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    font-family: var(--font-ui);
+    background: transparent;
+    cursor: pointer;
+}
+
+.tab-btn.active {
+    color: #0f172a;
+    border-color: #0f172a;
+    background-color: #f8fafc;
+}
+
+/* --- Component: Source Links --- */
+.source-link {
+    color: #2563eb;
+    text-decoration: underline;
+    text-decoration-color: #bfdbfe;
+    transition: color 0.2s;
+    font-family: var(--font-ui);
+}
+
+.source-link:hover {
+    color: #1e40af;
+    text-decoration-color: #1e40af;
+}
+
+/* --- Component: Branding / Logo --- */
+.logo-container {
+    display: flex;
+    align-items: center;
+}
+
+.logo-img {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-right: 0.75rem;
+    border-radius: 0.375rem;
+    object-fit: contain;
+}
+
+/* --- Animations --- */
+.content-section {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
